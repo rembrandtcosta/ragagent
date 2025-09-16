@@ -1,19 +1,13 @@
-from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_chroma import Chroma
 from chromadb.config import Settings
 from langchain_nomic import NomicEmbeddings
 
-DOCS_PATH = "data"
-loader = PyPDFDirectoryLoader(DOCS_PATH)
+DOCS_PATH = "data/codigo_civil_1314_1358"
+loader = DirectoryLoader(path=DOCS_PATH, recursive=True, loader_cls=TextLoader)
 docs = loader.load()
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200,
-)
-
-splits = text_splitter.split_documents(docs)
+splits = docs
 
 vectorstore = Chroma.from_documents(
     documents=splits,

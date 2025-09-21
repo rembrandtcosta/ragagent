@@ -1,8 +1,10 @@
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from langchain_ollama import ChatOllama
+# from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-llm = ChatOllama(model="llama3.2:1b")
+# llm = ChatOllama(model="llama3.2:1b")
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
 
 class EvaluateDocs(BaseModel):

@@ -1,5 +1,6 @@
-from langchain_ollama import ChatOllama
-from langchain_nomic.embeddings import NomicEmbeddings
+# from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from chromadb.config import Settings
 from langgraph.graph import END, StateGraph
@@ -9,9 +10,13 @@ from chains.generate_answer import generate_chain
 
 from typing import List, Dict, Any, Optional, TypedDict
 
-embeddings = NomicEmbeddings(
-        model="nomic-embed-text-v1.5",
-        inference_mode="local",
+import asyncio
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="gemini-embedding-001",
+    task_type="retrieval_document"
 )
 
 vectorstore = Chroma(
@@ -23,7 +28,8 @@ vectorstore = Chroma(
         )
 )
 
-llm = ChatOllama(model="llama3.2:1b")
+# llm = ChatOllama(model="llama3.2:1b")
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 retriever = vectorstore.as_retriever()
 
 
@@ -83,6 +89,7 @@ def create_graph():
     workflow.set_entry_point("Retrieve Documents")
     workflow.add_edge("Retrieve Documents", "Grade Documents")
     workflow.add_edge("Grade Documents", "Generate Answer")
+    # workflow.add_edge("Retrieve Documents", "Generate Answer")
 
     return workflow.compile()
 

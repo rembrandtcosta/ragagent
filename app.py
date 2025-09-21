@@ -7,6 +7,9 @@ from chromadb.config import Settings
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
+from rag_workflow import process_question
+
+
 embeddings = NomicEmbeddings(
         model="nomic-embed-text-v1.5",
         inference_mode="local",
@@ -49,10 +52,10 @@ if query:
     with st.chat_message("user"):
         st.write(query)
 
-    result = rag_chain.invoke({"input": query})
+    result = process_question(query)
     print(result)
     with st.chat_message("assistant"):
-        st.write(result["answer"])
+        st.write(result["solution"])
         st.write("**Fonte:**")
-        for doc in result["context"]:
+        for doc in result["documents"]:
             st.write(f'- {doc.page_content}')

@@ -3,14 +3,12 @@ from langchain_chroma import Chroma
 from chromadb.config import Settings
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 
-DOCS_PATH = "data/artigos"
+DOCS_PATH = "ingest/data/artigos"
 loader = DirectoryLoader(path=DOCS_PATH, recursive=True, loader_cls=TextLoader)
 docs = loader.load()
-print(docs)
-splits = docs
 
 vectorstore = Chroma.from_documents(
-    documents=splits,
+    documents=docs,
     embedding=GoogleGenerativeAIEmbeddings(
         model="gemini-embedding-001",
         task_type="retrieval_document"

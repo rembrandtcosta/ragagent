@@ -1,9 +1,8 @@
-from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from chromadb.config import Settings
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph
 
 from chains.evaluate import evaluate_docs
 from chains.generate_answer import generate_chain
@@ -28,7 +27,6 @@ vectorstore = Chroma(
         )
 )
 
-# llm = ChatOllama(model="llama3.2:1b")
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 retriever = vectorstore.as_retriever()
 
@@ -90,7 +88,6 @@ def create_graph():
     workflow.set_entry_point("Retrieve Documents")
     workflow.add_edge("Retrieve Documents", "Grade Documents")
     workflow.add_edge("Grade Documents", "Generate Answer")
-    # workflow.add_edge("Retrieve Documents", "Generate Answer")
 
     return workflow.compile()
 
@@ -98,6 +95,11 @@ def create_graph():
 graph = create_graph()
 
 
+def generate_graph_diagram():
+    graph.get_graph().draw_png("rag_workflow_diagram.png")
+
+
 def process_question(question):
     result = graph.invoke(input={"question": question})
     return result
+

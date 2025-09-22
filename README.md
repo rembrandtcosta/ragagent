@@ -40,3 +40,14 @@ streamlit run app.py
 Open your browser and navigate to `http://localhost:8501`.
 
 
+## Stack
+- Python 3.10+
+- LangChain
+- LangGraph
+- Streamlit
+- Chroma
+- Gemini API
+
+## Architecture
+![LangGraph Workflow Diagram](rag_workflow_diagram.png)
+

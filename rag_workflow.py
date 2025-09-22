@@ -1,4 +1,4 @@
-# from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -28,8 +28,8 @@ vectorstore = Chroma(
         )
 )
 
-# llm = ChatOllama(model="llama3.2:1b")
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatOllama(model="llama3.2:1b")
+# llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
 retriever = vectorstore.as_retriever()
 
 
@@ -49,10 +49,11 @@ def evaluate(state):
 
     for doc in documents:
         response = evaluate_docs.invoke({"question": question, "document": doc.page_content})
+        print(response)
         document_evaluations.append(response)
 
         result = response.score
-        if result.lower() == "yes":
+        if result.lower() == "sim":
             filtered_docs.append(doc)
 
     return {

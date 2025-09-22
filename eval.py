@@ -1,8 +1,9 @@
 import time
 from ragas import evaluate
-from rag_workflow import process_question
+from rag_workflow import process_question 
 from ragas import EvaluationDataset
 from ragas.metrics import LLMContextRecall, Faithfulness, FactualCorrectness
+from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from ragas.llms import LangchainLLMWrapper
 
@@ -24,6 +25,7 @@ qa = [
     "response": "Uma vez havendo um único registro imobiliário do empreendimento, mesmo sendo ele de uso misto, não há do que se falar em multiplicidade de convenções, já que, a convenção é o ato institutivo do Condomínio (arts. 1.332 e 1.333 Cód. Civil). Neste caso o que pode ser adotado é um Regimento Interno específico para cada um dos “setores” deste Condomínio."
   }
 ]
+qa = qa[:2]
 
 dataset = []
 
@@ -33,7 +35,7 @@ for item in qa:
 
     result = process_question(query)
     print(result)
-    time.sleep(25)
+    # time.sleep(25)
     relevant_docs = list(map(lambda doc: doc.page_content, result["documents"]))
     dataset.append(
         {
@@ -47,9 +49,10 @@ for item in qa:
 
 evaluation_dataset = EvaluationDataset.from_list(dataset)
 
-evaluator_llm = LangchainLLMWrapper(ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash"
-))
+# llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
+llm = ChatOllama(model="llama3.2:1b", temperature=0)
+
+evaluator_llm = LangchainLLMWrapper(llm)
 
 result = evaluate(
     dataset=evaluation_dataset,

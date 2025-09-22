@@ -1,58 +1,50 @@
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-# from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# llm = ChatOllama(model="llama3.2:1b")
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatOllama(model="llama3.2:1b", temperature=0)
+# llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
 
 
 class EvaluateDocs(BaseModel):
-
     score: str = Field(
-        description="Wheather documents are relevant to the question - 'yes' if sufficient, 'no' if insufficient"
+        description="Se os documentos são relevantes para a pergunta - 'sim' se relevantes, 'não' se não relevantes",
     )
 
 
 structured_output = llm.with_structured_output(EvaluateDocs)
 
-system = """You are an expert document relevance evaluator for a RAG (Retrieval-Augmented Generation) system. Your role is to assess whether retrieved documents contain sufficient information to answer a user's query effectively.
+system = """Você é um avaliador especialista em relevância de documentos para um sistema RAG (Retrieval-Augmented Generation). Seu papel é avaliar se os documentos recuperados contêm informações suficientes para responder de forma eficaz à consulta do usuário.
 
-EVALUATION FRAMEWORK:
+QUADRO DE AVALIAÇÃO:
 
-1. TOPICAL RELEVANCE:
-   - Do the documents directly address the main subject of the query?
-   - Are the key concepts and themes aligned with what the user is asking?
+1. RELEVÂNCIA TEMÁTICA:
 
-2. INFORMATION SUFFICIENCY:
-   - Is there enough detail to provide a comprehensive answer?
-   - Are specific facts, data, or examples present when needed?
-   - Can the query be answered without requiring external knowledge?
+Os documentos abordam diretamente o tema principal da consulta?
+Os conceitos e tópicos-chave estão alinhados com o que o usuário está perguntando?
 
-3. INFORMATION QUALITY:
-   - Is the information accurate and credible?
-   - Are there conflicting statements within the documents?
-   - Is the information current and relevant to the query context?
+2. QUALIDADE DA INFORMAÇÃO:
 
-4. COMPLETENESS ASSESSMENT:
-   - Does the document set cover all aspects of the query?
-   - Are there obvious gaps in information that would prevent a complete answer?
+As informações são precisas e confiáveis?
+Há declarações conflitantes nos documentos?
+As informações estão atualizadas e são relevantes para o contexto da consulta?
 
-SCORING CRITERIA:
-- Score 'yes' if documents provide sufficient, relevant information to answer the query satisfactorily
-- Score 'no' if documents lack key information, are off-topic, or insufficient for a complete answer
 
-ADDITIONAL REQUIREMENTS:
-- Provide a relevance score (0.0-1.0) indicating match quality
-- Assess coverage of query requirements
-- Identify any missing critical information
+CRITÉRIOS DE PONTUAÇÃO:
 
-Be thorough but efficient in your evaluation. Focus on practical utility for answer generation."""
+Marque “sim” se os documentos fornecerem informações relevantes para responder satisfatoriamente à consulta.
 
-evaluate_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system),
-        ("human", """Please evaluate whether the retrieved documents are sufficient to answer the user's query.
+Marque “não” se os documentos carecerem de informações essenciais ou estiverem fora de tópico. 
+
+REQUISITOS ADICIONAIS:
+
+Forneça uma pontuação de relevância (0,0–1,0) indicando a qualidade da correspondência.
+Avalie a cobertura dos requisitos da consulta.
+Identifique qualquer informação crítica ausente.
+Seja minucioso, mas eficiente em sua avaliação. Foque na utilidade prática para a geração de respostas."""
+
+human_prompt = """Por favor, avalie se os documentos recuperados são suficientes para responder à consulta do usuário.
 
 USER QUERY:
 {question}
@@ -60,13 +52,19 @@ USER QUERY:
 RETRIEVED DOCUMENTS:
 {document}
 
-EVALUATION REQUIRED:
-1. Primary Score: 'yes' if documents are sufficient, 'no' if insufficient
-2. Relevance Score: 0.0-1.0 rating of how well documents match the query
-3. Coverage Assessment: How well do the documents address the query requirements?
-4. Missing Information: What key information (if any) is missing for a complete answer?
+AVALIAÇÃO REQUERIDA:
+1. Pontuação Primária: 'sim' se os documentos forem relevantes, 'não' se não forem relevantes
+2. Pontuação de Relevância: avaliação de 0,0–1,0 de quão bem os documentos correspondem à consulta
+3. Avaliação de Cobertura: Quão bem os documentos atendem aos requisitos da consulta?
+4. Informação Ausente: Quais informações-chave (se houver) estão faltando para uma resposta completa?
 
-Provide your comprehensive evaluation based on the framework above."""),
+Forneça sua avaliação abrangente com base no quadro acima.
+"""
+
+evaluate_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system),
+        ("human", human_prompt),
     ]
 )
 

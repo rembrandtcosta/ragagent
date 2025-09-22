@@ -20,6 +20,7 @@ secao_re = re.compile(r"^Seç[aã]o\s+([IVXLCDM]+)\s*(.*)$", re.IGNORECASE)
 subsecao_re = re.compile(r"^Subseç[aã]o\s+([IVXLCDM]+)\s*(.*)$", re.IGNORECASE)
 artigo_re = re.compile(r"^Art\.\s*1\.(\d+)\b(.*)", re.IGNORECASE)
 
+
 def sanitize(name: str) -> str:
     """Sanitize names for filesystem: remove / replace problematic chars."""
     # Remove acentos, pontuações, etc., simplificar
@@ -89,7 +90,8 @@ def process_lines(lines: list):
         m = artigo_re.match(line)
         if m:
             num = int(m.group(1))
-            num += 1000
+            if num < 1000:
+                num += 1000
             if ARTIGO_MIN <= num <= ARTIGO_MAX:
                 # salva artigo anterior, se ativo
                 if artigo_buffer and artigo_num is not None:

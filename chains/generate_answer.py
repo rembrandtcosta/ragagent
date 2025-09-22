@@ -3,8 +3,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-llm = ChatOllama(model="llama3.2:1b", temperature=0)
-# llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
+# llm = ChatOllama(model="llama3.2:1b", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
 
 system_prompt = """Você é um assistente especializado em responder perguntas com base em documentos fornecidos. Seu objetivo é oferecer respostas precisas, úteis e bem estruturadas que atendam diretamente à pergunta do usuário.

@@ -1,0 +1,42 @@
+[
+  {
+    "user_input": "Moro em apartamento térreo do tipo “garden” e sofro com barulho de condôminos que entram e saem gritando e batendo portas. Já pedi em assembleia que orientassem os moradores e colocassem placas de silêncio, mas o síndico e a administradora disseram que nada pode ser feito. Isso é correto segundo o Código Civil?",
+    "response": "Não. O Código Civil veda atos que comprometam o sossego dos demais condôminos (art. 1.336, IV e art. 1.337, parágrafo único). Cabe ao síndico aplicar medidas e multas em caso de reincidência."
+  },
+  {
+    "user_input": "No demonstrativo financeiro de maio/2016, percebi que não lançaram como receita os pagamentos de condomínio, e o valor não entrou nos meses seguintes. O que deve ser feito?",
+    "response": "Deve-se apurar a irregularidade por meio de auditoria, pois a responsabilidade pela exatidão das contas é do síndico (art. 1.348, VII)."
+  },
+  {
+    "user_input": "Minha amiga atrasou o pagamento do condomínio e a síndica exige juros muito altos sem acordo. Quais juros são permitidos por lei?",
+    "response": "O art. 1.336, I do Código Civil fixa juros de 1% ao mês e multa de 2%. Só a convenção pode estipular juros diferentes, mantendo a multa em 2%."
+  },
+  {
+    "user_input": "Um prédio tem três finalidades: residencial, comercial e clínica, cada setor com acesso próprio e matrícula individual. É possível criar uma convenção diferente para cada setor?",
+    "response": "Não. Havendo um único registro, só pode haver uma convenção (arts. 1.332 e 1.333). O que se pode adotar são regimentos internos específicos por setor."
+  },
+  {
+    "user_input": "O síndico pode tomar decisões sozinho sem consultar assembleia, como contratar obras de alto valor?",
+    "response": "Não. O art. 1.348, V exige autorização da assembleia para obras voluptuárias ou que ultrapassem limites do orçamento anual."
+  },
+  {
+    "user_input": "Um morador alterou a fachada do edifício sem autorização. Isso é permitido?",
+    "response": "Não. O art. 1.336, III proíbe alteração da fachada sem consentimento unânime dos condôminos."
+  },
+  {
+    "user_input": "O síndico se recusa a prestar contas anuais. O que os condôminos podem fazer?",
+    "response": "A prestação de contas é obrigatória (art. 1.348, VIII). Os condôminos podem exigir judicialmente caso ele não apresente."
+  },
+  {
+    "user_input": "Um condômino impede o uso da garagem comum pelos demais. Ele pode restringir?",
+    "response": "Não. O uso da área comum deve ser igualitário, respeitando a destinação (art. 1.335, II)."
+  },
+  {
+    "user_input": "Desejo realizar obras urgentes no meu apartamento que afetam a estrutura do prédio. Preciso de autorização?",
+    "response": "Sim. O art. 1.336, II proíbe obras que comprometam a segurança da edificação sem autorização do condomínio."
+  },
+  {
+    "user_input": "Se o síndico comete falta grave, como pode ser destituído?",
+    "response": "A assembleia pode destituir o síndico em caso de irregularidade, falta de prestação de contas ou má administração (art. 1.349)."
+  }
+]

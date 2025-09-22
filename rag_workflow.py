@@ -28,8 +28,8 @@ vectorstore = Chroma(
         )
 )
 
-llm = ChatOllama(model="llama3.2:1b")
-# llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
+# llm = ChatOllama(model="llama3.2:1b")
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 retriever = vectorstore.as_retriever()
 
 

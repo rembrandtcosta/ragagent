@@ -51,3 +51,5 @@ Open your browser and navigate to `http://localhost:8501`.
 ## Architecture
 ![LangGraph Workflow Diagram](rag_workflow_diagram.png)
 
+[Presentation Slides](https://docs.google.com/presentation/d/1PK9flkIM0cSrO4_OdMueWE8zr5tly3LXo8hn993i0K8/edit?usp=sharing)
+

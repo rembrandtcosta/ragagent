@@ -16,4 +16,5 @@ dist/
 Thumbs.db
 
 db/
+db_internal/
 rag/

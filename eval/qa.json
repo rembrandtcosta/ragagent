@@ -4,20 +4,12 @@
     "response": "Não. O Código Civil veda atos que comprometam o sossego dos demais condôminos (art. 1.336, IV e art. 1.337, parágrafo único). Cabe ao síndico aplicar medidas e multas em caso de reincidência."
   },
   {
-    "user_input": "No demonstrativo financeiro de maio/2016, percebi que não lançaram como receita os pagamentos de condomínio, e o valor não entrou nos meses seguintes. O que deve ser feito?",
-    "response": "Deve-se apurar a irregularidade por meio de auditoria, pois a responsabilidade pela exatidão das contas é do síndico (art. 1.348, VII)."
-  },
-  {
     "user_input": "Minha amiga atrasou o pagamento do condomínio e a síndica exige juros muito altos sem acordo. Quais juros são permitidos por lei?",
     "response": "O art. 1.336, I do Código Civil fixa juros de 1% ao mês e multa de 2%. Só a convenção pode estipular juros diferentes, mantendo a multa em 2%."
   },
   {
-    "user_input": "Um prédio tem três finalidades: residencial, comercial e clínica, cada setor com acesso próprio e matrícula individual. É possível criar uma convenção diferente para cada setor?",
-    "response": "Não. Havendo um único registro, só pode haver uma convenção (arts. 1.332 e 1.333). O que se pode adotar são regimentos internos específicos por setor."
-  },
-  {
     "user_input": "O síndico pode tomar decisões sozinho sem consultar assembleia, como contratar obras de alto valor?",
-    "response": "Não. O art. 1.348, V exige autorização da assembleia para obras voluptuárias ou que ultrapassem limites do orçamento anual."
+    "response": "Não. O síndico só pode decidir sozinho em caso de obras necessárias e urgentes (art. 1.341, §1º, CC). Para obras úteis precisa da aprovação da maioria dos condôminos (art. 1.341, II, CC), e para obras voluptuárias, de 2/3 dos condôminos (art. 1.341, III, CC)."
   },
   {
     "user_input": "Um morador alterou a fachada do edifício sem autorização. Isso é permitido?",
@@ -32,11 +24,20 @@
     "response": "Não. O uso da área comum deve ser igualitário, respeitando a destinação (art. 1.335, II)."
   },
   {
-    "user_input": "Desejo realizar obras urgentes no meu apartamento que afetam a estrutura do prédio. Preciso de autorização?",
-    "response": "Sim. O art. 1.336, II proíbe obras que comprometam a segurança da edificação sem autorização do condomínio."
-  },
-  {
     "user_input": "Se o síndico comete falta grave, como pode ser destituído?",
     "response": "A assembleia pode destituir o síndico em caso de irregularidade, falta de prestação de contas ou má administração (art. 1.349)."
+  },
+  {
+    "user_input": "Os condôminos são obrigados a participar das despesas de obras de conservação do prédio, mesmo que não usem determinada área comum?",
+    "response": "Sim. Todos devem contribuir proporcionalmente às despesas de conservação e manutenção, independentemente do uso direto, conforme o art. 1.336, I do Código Civil."
+  },
+  {
+    "user_input": "O condomínio é obrigado a contratar seguro do edifício?",
+    "response": "Sim. O art. 1.346 do Código Civil obriga a contratação de seguro que cubra toda a edificação contra risco de incêndio ou destruição, total ou parcial."
+  },
+  {
+    "user_input": "O que acontece se o condômino não pagar reiteradamente as taxas condominiais?",
+    "response": "Além da cobrança judicial, ele pode ser considerado condômino antissocial, sujeito a multa de até dez vezes a contribuição mensal, conforme o art. 1.337, caput e parágrafo único, do Código Civil."
   }
 ]
+

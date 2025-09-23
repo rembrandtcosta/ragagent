@@ -17,6 +17,9 @@ Baseie sua resposta principalmente nos documentos de contexto fornecidos.
 Use informações, fatos e detalhes específicos dos documentos.
 Mantenha a precisão e evite adicionar informações não presentes nas fontes.
 Se os documentos não contiverem informações suficientes, deixe clara essa limitação.
+Não cite as fontes pelo nome do arquivo, mas integre as informações de forma natural na resposta.
+Cite primeiramente os artigos do código civil e complemente a resposta com os documentos do condomínio, se disponível e necessário.
+Cite por exemplo os artigos mencionados ou que veio do documento interno do condomínio fornecido (convenção, regimento interno, etc).
 
 2. ESTRUTURA DA RESPOSTA:
 

@@ -1,11 +1,15 @@
+import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from chromadb.config import Settings
 from langgraph.graph import StateGraph
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from chains.evaluate import evaluate_docs
 from chains.generate_answer import generate_chain
+from chains.internal_docs import internal_docs
 
 from typing import List, Dict, Any, Optional, TypedDict
 
@@ -27,6 +31,30 @@ vectorstore = Chroma(
         )
 )
 
+retriever_internal = None
+
+
+def set_internal_retriever(document):
+    global retriever_internal
+    with open("internal_doc.pdf", "wb") as f:
+        f.write(document)
+    loader = PyPDFLoader("internal_doc.pdf")
+    docs = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splits = text_splitter.split_documents(docs)
+    internal_vectorstore = Chroma.from_documents(
+        documents=splits,
+        embedding=embeddings,
+        persist_directory="./db_internal",
+        client_settings=Settings(
+            anonymized_telemetry=False,
+            is_persistent=True,
+        )
+    )
+
+    retriever_internal = internal_vectorstore.as_retriever()
+
+
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 retriever = vectorstore.as_retriever()
 
@@ -38,6 +66,14 @@ def retrieve(state):
     return {"documents": docs, "question": question}
 
 
+def retrieve_internal_docs(state):
+    question = state["question"]
+
+    docs = retriever_internal.invoke(question)
+    print("Internal docs:", docs)
+    return {"internal_documents": docs}
+
+
 def evaluate(state):
     question = state["question"]
     documents = state["documents"]
@@ -46,6 +82,7 @@ def evaluate(state):
     filtered_docs = []
 
     for doc in documents:
+        print(doc)
         response = evaluate_docs.invoke({"question": question, "document": doc.page_content})
         print(response)
         document_evaluations.append(response)
@@ -61,6 +98,25 @@ def evaluate(state):
     }
 
 
+def internal(state):
+    question = state["question"]
+    internal_documents = state["internal_documents"]
+    documents = state["documents"]
+
+    for doc in internal_documents:
+        print(doc)
+        internal_relevance = internal_docs.invoke({"question": question, "document": doc})
+        print("Internal doc relevance:", internal_relevance)
+        if internal_relevance.score.lower() == "sim":
+            documents = documents + [doc]
+
+    return {
+        "documents": documents,
+        "question": question,
+        "document_evaluations": state.get("document_evaluations", []),
+    }
+
+
 def generate_answer(state):
     question = state["question"]
     documents = state["documents"]
@@ -73,6 +129,7 @@ class GraphState(TypedDict):
     question: str
     solution: str
     documents: List[str]
+    internal_documents: Optional[List[str]]
     document_evaluations: Optional[List[Dict[str, Any]]]
     document_relevance_score: Optional[Dict[str, Any]]
     question_relevance_score: Optional[Dict[str, Any]]
@@ -82,12 +139,20 @@ def create_graph():
     workflow = StateGraph(GraphState)
 
     workflow.add_node("Retrieve Documents", retrieve)
+    workflow.add_node("Retrieve Internal Documents", retrieve_internal_docs)
     workflow.add_node("Grade Documents", evaluate)
+    workflow.add_node("Check Internal Docs", internal)
     workflow.add_node("Generate Answer", generate_answer)
 
     workflow.set_entry_point("Retrieve Documents")
     workflow.add_edge("Retrieve Documents", "Grade Documents")
     workflow.add_edge("Grade Documents", "Generate Answer")
+    workflow.add_conditional_edges("Grade Documents",
+                                   lambda state: "answer" if retriever_internal is None else "internal_docs",
+                                   {"answer": "Generate Answer", "internal_docs": "Retrieve Internal Documents"}
+                                   )
+    workflow.add_edge("Retrieve Internal Documents", "Check Internal Docs")
+    workflow.add_edge("Check Internal Docs", "Generate Answer")
 
     return workflow.compile()
 

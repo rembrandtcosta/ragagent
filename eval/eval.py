@@ -5,7 +5,6 @@ import sys
 from ragas import evaluate
 from ragas import EvaluationDataset
 from ragas.metrics import faithfulness, context_precision, context_recall, answer_relevancy
-from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from ragas.llms import LangchainLLMWrapper
@@ -26,8 +25,6 @@ for item in qa:
     reference = item["response"]
 
     result = process_question(query)
-    print(result)
-    # time.sleep(25)
     relevant_docs = list(map(lambda doc: doc.page_content, result["documents"]))
     dataset.append(
         {
@@ -53,8 +50,6 @@ llm = GoogleGenerativeAI(
     request_timeout=60
 )
 
-# llm = ChatOllama(model="llama3.2:1b", temperature=0)
-
 evaluator_llm = LangchainLLMWrapper(llm)
 evaluator_embeddings = GoogleGenerativeAIEmbeddings(
     model="gemini-embedding-001",
@@ -69,9 +64,5 @@ result = evaluate(
     embeddings=evaluator_embeddings
 )
 
-# os.makedirs("eval/results", exist_ok=True)
-
-# with open("eval/results/ragas_evaluation_results.json", "w", encoding="utf-8") as f:
-#    json.dump(result.to_json(), f, indent=2, ensure_ascii=False)
 print(result)
 

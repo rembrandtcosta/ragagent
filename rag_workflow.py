@@ -55,7 +55,7 @@ def set_internal_retriever(document):
     retriever_internal = internal_vectorstore.as_retriever()
 
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro")
 retriever = vectorstore.as_retriever()
 
 

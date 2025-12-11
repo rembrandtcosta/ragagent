@@ -1,17 +1,18 @@
-import time
 import os
 import json
 import sys
+
 from ragas import evaluate
 from ragas import EvaluationDataset
-from ragas.metrics import faithfulness, context_precision, context_recall, answer_relevancy
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAI
+from ragas.metrics import (
+    faithfulness, context_precision, context_recall, answer_relevancy
+)
+from langchain_google_genai import GoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from ragas.llms import LangchainLLMWrapper
+from rag_workflow import process_question
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from rag_workflow import process_question
 
 with open("eval/qa.json", "r", encoding="utf-8") as f:
     qa = json.load(f)
@@ -25,7 +26,9 @@ for item in qa:
     reference = item["response"]
 
     result = process_question(query)
-    relevant_docs = list(map(lambda doc: doc.page_content, result["documents"]))
+    relevant_docs = list(
+        map(lambda doc: doc.page_content, result["documents"])
+    )
     dataset.append(
         {
             "user_input": query,
@@ -59,10 +62,14 @@ evaluator_embeddings = GoogleGenerativeAIEmbeddings(
 
 result = evaluate(
     dataset=evaluation_dataset,
-    metrics=[faithfulness, context_precision, context_recall, answer_relevancy],
+    metrics=[
+        faithfulness,
+        context_precision,
+        context_recall,
+        answer_relevancy
+    ],
     llm=evaluator_llm,
     embeddings=evaluator_embeddings
 )
 
 print(result)
-

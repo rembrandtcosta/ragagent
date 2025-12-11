@@ -33,7 +33,7 @@ CRITÉRIOS DE PONTUAÇÃO:
 
 Marque “sim” se os documentos fornecerem informações relevantes para responder satisfatoriamente à consulta.
 
-Marque “não” se os documentos carecerem de informações essenciais ou estiverem fora de tópico. 
+Marque “não” se os documentos carecerem de informações essenciais ou estiverem fora de tópico.
 
 REQUISITOS ADICIONAIS:
 

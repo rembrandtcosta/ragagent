@@ -1,4 +1,3 @@
-import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -40,7 +39,10 @@ def set_internal_retriever(document):
         f.write(document)
     loader = PyPDFLoader("internal_doc.pdf")
     docs = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
     splits = text_splitter.split_documents(docs)
     internal_vectorstore = Chroma.from_documents(
         documents=splits,
@@ -83,7 +85,10 @@ def evaluate(state):
 
     for doc in documents:
         print(doc)
-        response = evaluate_docs.invoke({"question": question, "document": doc.page_content})
+        response = evaluate_docs.invoke({
+            "question": question,
+            "document": doc.page_content
+        })
         print(response)
         document_evaluations.append(response)
 
@@ -105,7 +110,10 @@ def internal(state):
 
     for doc in internal_documents:
         print(doc)
-        internal_relevance = internal_docs.invoke({"question": question, "document": doc})
+        internal_relevance = internal_docs.invoke({
+            "question": question,
+            "document": doc
+        })
         print("Internal doc relevance:", internal_relevance)
         if internal_relevance.score.lower() == "sim":
             documents = documents + [doc]
@@ -121,7 +129,10 @@ def generate_answer(state):
     question = state["question"]
     documents = state["documents"]
 
-    solution = generate_chain.invoke({"context": documents, "question": question})
+    solution = generate_chain.invoke({
+        "context": documents,
+        "question": question,
+    })
     return {"documents": documents, "question": question, "solution": solution}
 
 
@@ -147,10 +158,15 @@ def create_graph():
     workflow.set_entry_point("Retrieve Documents")
     workflow.add_edge("Retrieve Documents", "Grade Documents")
     workflow.add_edge("Grade Documents", "Generate Answer")
-    workflow.add_conditional_edges("Grade Documents",
-                                   lambda state: "answer" if retriever_internal is None else "internal_docs",
-                                   {"answer": "Generate Answer", "internal_docs": "Retrieve Internal Documents"}
-                                   )
+    workflow.add_conditional_edges(
+        "Grade Documents",
+        lambda state:
+            "answer" if retriever_internal is None else "internal_docs",
+        {
+            "answer": "Generate Answer",
+            "internal_docs": "Retrieve Internal Documents"
+        }
+    )
     workflow.add_edge("Retrieve Internal Documents", "Check Internal Docs")
     workflow.add_edge("Check Internal Docs", "Generate Answer")
 
@@ -167,4 +183,3 @@ def generate_graph_diagram():
 def process_question(question):
     result = graph.invoke(input={"question": question})
     return result
-

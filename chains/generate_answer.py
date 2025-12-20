@@ -1,8 +1,9 @@
+from config import MODEL_NAME
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+llm = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=0)
 
 
 system_prompt = """Você é um assistente especializado em responder perguntas com base em documentos fornecidos. Seu objetivo é oferecer respostas precisas, úteis e bem estruturadas que atendam diretamente à pergunta do usuário.

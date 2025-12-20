@@ -1,3 +1,4 @@
+from config import CHUNK_SIZE, CHUNK_OVERLAP, MODEL_NAME
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -40,8 +41,8 @@ def set_internal_retriever(document):
     loader = PyPDFLoader("internal_doc.pdf")
     docs = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
     )
     splits = text_splitter.split_documents(docs)
     internal_vectorstore = Chroma.from_documents(
@@ -57,7 +58,7 @@ def set_internal_retriever(document):
     retriever_internal = internal_vectorstore.as_retriever()
 
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro")
+llm = ChatGoogleGenerativeAI(model=MODEL_NAME)
 retriever = vectorstore.as_retriever()
 
 

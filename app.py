@@ -12,7 +12,7 @@ if query:
     with st.chat_message("user"):
         st.write(query)
 
-    result = process_question(query)
+    result, _ = process_question(query)
     print(result)
     with st.chat_message("assistant"):
         st.write(result["solution"])

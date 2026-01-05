@@ -1,3 +1,7 @@
+import os
+import time
+import psutil
+from contextlib import contextmanager
 from config import CHUNK_SIZE, CHUNK_OVERLAP, MODEL_NAME
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
@@ -181,6 +185,38 @@ def generate_graph_diagram():
     graph.get_graph().draw_png("rag_workflow_diagram.png")
 
 
+def _get_footprint() -> Dict[str, float]:
+    process = psutil.Process(os.getpid())
+    return {
+        "memory": process.memory_info().rss / (1024 * 1024),  # in MB
+        "cpu": process.cpu_percent(interval=None),  # in percentage
+    }
+
+
+def _get_diff_footprint(before: Dict[str, float], after: Dict[str, float]
+                        ) -> Dict[str, float]:
+    return {
+        "memory_diff": after["memory"] - before["memory"],
+        "cpu_diff": after["cpu"] - before["cpu"],
+    }
+
+
+@contextmanager
+def timer(label: str):
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        end = time.perf_counter()
+        print(f"{label} Elapsed time: {end - start:.4f} seconds")
+
+
 def process_question(question):
-    result = graph.invoke(input={"question": question})
-    return result
+    before = _get_footprint()
+    print("Processing question:", question)
+    with timer("RAG Workflow"):
+        result = graph.invoke(input={"question": question})
+    after = _get_footprint()
+    footprint = _get_diff_footprint(before, after)
+    print(footprint)
+    return result, footprint

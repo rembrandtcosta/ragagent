@@ -189,7 +189,7 @@ def _get_footprint() -> Dict[str, float]:
     process = psutil.Process(os.getpid())
     return {
         "memory": process.memory_info().rss / (1024 * 1024),  # in MB
-        "cpu": process.cpu_percent(interval=None),  # in percentage
+        "cpu": process.cpu_times(),
     }
 
 
@@ -197,7 +197,7 @@ def _get_diff_footprint(before: Dict[str, float], after: Dict[str, float]
                         ) -> Dict[str, float]:
     return {
         "memory_diff": after["memory"] - before["memory"],
-        "cpu_diff": after["cpu"] - before["cpu"],
+        "cpu_diff": after["cpu"].user - before["cpu"].user,
     }
 
 

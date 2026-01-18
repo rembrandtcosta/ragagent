@@ -1,43 +1,53 @@
 [
   {
     "user_input": "Moro em apartamento térreo do tipo “garden” e sofro com barulho de condôminos que entram e saem gritando e batendo portas. Já pedi em assembleia que orientassem os moradores e colocassem placas de silêncio, mas o síndico e a administradora disseram que nada pode ser feito. Isso é correto segundo o Código Civil?",
-    "response": "Não. O Código Civil veda atos que comprometam o sossego dos demais condôminos (art. 1.336, IV e art. 1.337, parágrafo único). Cabe ao síndico aplicar medidas e multas em caso de reincidência."
+    "response": "Não. O Código Civil veda atos que comprometam o sossego dos demais condôminos (art. 1.336, IV e art. 1.337, parágrafo único). Cabe ao síndico aplicar medidas e multas em caso de reincidência.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1336.txt", "ingest/data/artigos/Art_1337.txt"]
   },
   {
     "user_input": "Minha amiga atrasou o pagamento do condomínio e a síndica exige juros muito altos sem acordo. Quais juros são permitidos por lei?",
-    "response": "O art. 1.336, I do Código Civil fixa juros de 1% ao mês e multa de 2%. Só a convenção pode estipular juros diferentes, mantendo a multa em 2%."
+    "response": "O art. 1.336, I do Código Civil fixa juros de 1% ao mês e multa de 2%. Só a convenção pode estipular juros diferentes, mantendo a multa em 2%.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1336.txt"]
   },
   {
     "user_input": "O síndico pode tomar decisões sozinho sem consultar assembleia, como contratar obras de alto valor?",
-    "response": "Não. O síndico só pode decidir sozinho em caso de obras necessárias e urgentes (art. 1.341, §1º, CC). Para obras úteis precisa da aprovação da maioria dos condôminos (art. 1.341, II, CC), e para obras voluptuárias, de 2/3 dos condôminos (art. 1.341, III, CC)."
+    "response": "Não. O síndico só pode decidir sozinho em caso de obras necessárias e urgentes (art. 1.341, §1º, CC). Para obras úteis precisa da aprovação da maioria dos condôminos (art. 1.341, II, CC), e para obras voluptuárias, de 2/3 dos condôminos (art. 1.341, III, CC).",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1341.txt"]
   },
   {
     "user_input": "Um morador alterou a fachada do edifício sem autorização. Isso é permitido?",
-    "response": "Não. O art. 1.336, III proíbe alteração da fachada sem consentimento unânime dos condôminos."
+    "response": "Não. O art. 1.336, III proíbe alteração da fachada sem consentimento unânime dos condôminos.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1336.txt"]
   },
   {
     "user_input": "O síndico se recusa a prestar contas anuais. O que os condôminos podem fazer?",
-    "response": "A prestação de contas é obrigatória (art. 1.348, VIII). Os condôminos podem exigir judicialmente caso ele não apresente."
+    "response": "A prestação de contas é obrigatória (art. 1.348, VIII). Os condôminos podem exigir judicialmente caso ele não apresente.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1348.txt"]
   },
   {
     "user_input": "Um condômino impede o uso da garagem comum pelos demais. Ele pode restringir?",
-    "response": "Não. O uso da área comum deve ser igualitário, respeitando a destinação (art. 1.335, II)."
+    "response": "Não. O uso da área comum deve ser igualitário, respeitando a destinação (art. 1.335, II).",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1335.txt"]
   },
   {
     "user_input": "Se o síndico comete falta grave, como pode ser destituído?",
-    "response": "A assembleia pode destituir o síndico em caso de irregularidade, falta de prestação de contas ou má administração (art. 1.349)."
+    "response": "A assembleia pode destituir o síndico em caso de irregularidade, falta de prestação de contas ou má administração (art. 1.349).",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1349.txt"]
   },
   {
     "user_input": "Os condôminos são obrigados a participar das despesas de obras de conservação do prédio, mesmo que não usem determinada área comum?",
-    "response": "Sim. Todos devem contribuir proporcionalmente às despesas de conservação e manutenção, independentemente do uso direto, conforme o art. 1.336, I do Código Civil."
+    "response": "Sim. Todos devem contribuir proporcionalmente às despesas de conservação e manutenção, independentemente do uso direto, conforme o art. 1.336, I do Código Civil.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1336.txt"]
   },
   {
     "user_input": "O condomínio é obrigado a contratar seguro do edifício?",
-    "response": "Sim. O art. 1.346 do Código Civil obriga a contratação de seguro que cubra toda a edificação contra risco de incêndio ou destruição, total ou parcial."
+    "response": "Sim. O art. 1.346 do Código Civil obriga a contratação de seguro que cubra toda a edificação contra risco de incêndio ou destruição, total ou parcial.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1346.txt"]
   },
   {
     "user_input": "O que acontece se o condômino não pagar reiteradamente as taxas condominiais?",
-    "response": "Além da cobrança judicial, ele pode ser considerado condômino antissocial, sujeito a multa de até dez vezes a contribuição mensal, conforme o art. 1.337, caput e parágrafo único, do Código Civil."
+    "response": "Além da cobrança judicial, ele pode ser considerado condômino antissocial, sujeito a multa de até dez vezes a contribuição mensal, conforme o art. 1.337, caput e parágrafo único, do Código Civil.",
+    "retrieved_context_ids": ["ingest/data/artigos/Art_1337.txt"]
   }
 ]
 

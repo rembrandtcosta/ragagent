@@ -1,4 +1,4 @@
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.5-flash-lite"

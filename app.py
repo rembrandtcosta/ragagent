@@ -18,7 +18,7 @@ if query:
         st.write(result["solution"])
         st.write("**Fonte:**")
         for doc in result["documents"]:
-            st.write(f'- {doc.page_content}')
+            st.write(f'- {doc.metadata["original_content_pure"]}')
 
 
 def render_upload_section():

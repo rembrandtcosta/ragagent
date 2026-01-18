@@ -5,7 +5,8 @@ import sys
 from ragas import evaluate
 from ragas import EvaluationDataset
 from ragas.metrics import (
-    faithfulness, context_precision, context_recall, answer_relevancy
+    faithfulness, context_precision, context_recall, answer_relevancy,
+    IDBasedContextRecall
 )
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
@@ -25,16 +26,22 @@ for item in qa:
     query = item["user_input"]
     reference = item["response"]
 
-    result = process_question(query)
+    result, footprint = process_question(query)
+    print(footprint)
     relevant_docs = list(
         map(lambda doc: doc.page_content, result["documents"])
+    )
+    retrieved_docs = list(
+        map(lambda doc: doc.metadata.get("source", ""), result["documents"])
     )
     dataset.append(
         {
             "user_input": query,
             "retrieved_contexts": relevant_docs,
             "response": result["solution"],
-            "reference": reference
+            "reference": reference,
+            "reference_context_ids": item.get("retrieved_context_ids", []),
+            "retrieved_context_ids": retrieved_docs,
         }
     )
 
@@ -46,7 +53,7 @@ if not api_key:
     raise ValueError("GOOGLE_API_KEY environment variable not set")
 
 llm = GoogleGenerativeAI(
-    model="gemini-2.5-pro",
+    model="gemini-2.5-flash",
     google_api_key=api_key,
     temperature=0.1,
     max_retries=3,
@@ -66,7 +73,8 @@ result = evaluate(
         faithfulness,
         context_precision,
         context_recall,
-        answer_relevancy
+        answer_relevancy,
+        IDBasedContextRecall(),
     ],
     llm=evaluator_llm,
     embeddings=evaluator_embeddings

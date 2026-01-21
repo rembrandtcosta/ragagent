@@ -12,7 +12,6 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from sentence_transformers import CrossEncoder
-from chains.evaluate import evaluate_docs
 from chains.generate_answer import generate_chain
 from chains.internal_docs import internal_docs
 
@@ -78,7 +77,6 @@ def retrieve_internal_docs(state):
     question = state["question"]
 
     docs = retriever_internal.invoke(question)
-    # print("Internal docs:", docs)
     return {"internal_documents": docs}
 
 
@@ -95,23 +93,12 @@ def evaluate(state):
 
     filtered_docs = []
 
-    THRESHOLD = 0.0
+    THRESHOLD = -3.0
     for doc, score in zip(documents, scores):
         if score > THRESHOLD:
-            print(f"   -> KEEP (Score: {score:.2f}): {doc.page_content[:30]}...")
             filtered_docs.append(doc)
-        else:
-            print(f"   -> SKIP (Score: {score:.2f}): {doc.page_content[:30]}...")
 
-    re_filtered_docs = []
-    for doc in filtered_docs:
-        response = evaluate_docs.invoke({
-            "question": question,
-            "document": doc.page_content
-        })
-        if response.score.lower() == "sim":
-            re_filtered_docs.append(doc)
-    return {"documents": re_filtered_docs, "question": question}
+    return {"documents": filtered_docs, "question": question}
 
 
 def internal(state):
@@ -120,12 +107,10 @@ def internal(state):
     documents = state["documents"]
 
     for doc in internal_documents:
-        # print(doc)
         internal_relevance = internal_docs.invoke({
             "question": question,
             "document": doc
         })
-        # print("Internal doc relevance:", internal_relevance)
         if internal_relevance.score.lower() == "sim":
             documents = documents + [doc]
 
@@ -167,9 +152,7 @@ def create_graph():
     workflow.add_node("Generate Answer", generate_answer)
 
     workflow.set_entry_point("Retrieve Documents")
-    # workflow.add_edge("Retrieve Documents", "Generate Answer")
-    workflow.add_edge("Retrieve Documents", "Grade Documents")
-    workflow.add_edge("Grade Documents", "Generate Answer")
+    workflow.add_edge("Retrieve Documents", "Generate Answer")
     workflow.add_conditional_edges(
         "Grade Documents",
         lambda state:
@@ -220,10 +203,8 @@ def timer(label: str):
 
 def process_question(question):
     before = _get_footprint()
-    # print("Processing question:", question)
     with timer("RAG Workflow"):
         result = graph.invoke(input={"question": question})
     after = _get_footprint()
     footprint = _get_diff_footprint(before, after)
-    # print(footprint)
     return result, footprint

@@ -2,11 +2,12 @@ import os
 import json
 import sys
 
+from tqdm import tqdm
 from ragas import evaluate
 from ragas import EvaluationDataset
 from ragas.metrics import (
     faithfulness, context_precision, context_recall, answer_relevancy,
-    IDBasedContextRecall
+    IDBasedContextRecall, IDBasedContextPrecision
 )
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
@@ -18,16 +19,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 with open("eval/qa.json", "r", encoding="utf-8") as f:
     qa = json.load(f)
 
-print(qa)
-
 dataset = []
-
-for item in qa:
+for item in tqdm(qa, desc="Preparing evaluation dataset"):
     query = item["user_input"]
     reference = item["response"]
 
     result, footprint = process_question(query)
-    print(footprint)
     relevant_docs = list(
         map(lambda doc: doc.page_content, result["documents"])
     )
@@ -75,6 +72,7 @@ result = evaluate(
         context_recall,
         answer_relevancy,
         IDBasedContextRecall(),
+        IDBasedContextPrecision(),
     ],
     llm=evaluator_llm,
     embeddings=evaluator_embeddings

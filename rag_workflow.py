@@ -18,6 +18,9 @@ from chains.generate_answer import generate_chain
 from chains.internal_docs import internal_docs
 from chains.clause_extractor import clause_extractor_chain, deduplicate_clauses, ExtractedClause
 from chains.illegality_detector import illegality_detector_chain
+from chains.document_suggester import document_suggester_chain
+from chains.document_writer import document_writer_chain
+from chains.document_request_detector import document_request_detector_chain
 
 from typing import List, Dict, Any, Optional, TypedDict
 
@@ -212,6 +215,57 @@ def process_question(question):
     after = _get_footprint()
     footprint = _get_diff_footprint(before, after)
     return result, footprint
+
+
+def detect_explicit_document_request(question: str) -> dict:
+    """Detect if the user is explicitly requesting a document to be written."""
+    try:
+        result = document_request_detector_chain.invoke({"question": question})
+        return {
+            "is_explicit_request": result.is_explicit_request,
+            "document_type": result.document_type,
+            "document_name": result.document_name,
+            "extracted_context": result.extracted_context
+        }
+    except Exception as e:
+        print(f"Error detecting document request: {e}")
+        return {"is_explicit_request": False}
+
+
+def check_document_suggestion(question: str, answer: str) -> dict:
+    """Check if a document should be suggested based on the question and answer."""
+    try:
+        suggestion = document_suggester_chain.invoke({
+            "question": question,
+            "answer": answer
+        })
+        return {
+            "should_suggest": suggestion.should_suggest,
+            "document_type": suggestion.document_type,
+            "document_name": suggestion.document_name,
+            "suggestion_message": suggestion.suggestion_message
+        }
+    except Exception as e:
+        print(f"Error checking document suggestion: {e}")
+        return {"should_suggest": False}
+
+
+def write_document(document_type: str, document_name: str,
+                   original_question: str, previous_answer: str,
+                   additional_info: str = "") -> str:
+    """Generate a formal document based on the conversation context."""
+    try:
+        document = document_writer_chain.invoke({
+            "document_type": document_type,
+            "document_name": document_name,
+            "original_question": original_question,
+            "previous_answer": previous_answer,
+            "additional_info": additional_info
+        })
+        return document
+    except Exception as e:
+        print(f"Error writing document: {e}")
+        return f"Erro ao gerar documento: {str(e)}"
 
 
 # Data models for document analysis

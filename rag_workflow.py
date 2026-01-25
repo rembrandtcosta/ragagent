@@ -1,8 +1,10 @@
 import os
 import time
 import psutil
+from datetime import datetime
 from contextlib import contextmanager
-from config import CHUNK_SIZE, CHUNK_OVERLAP, MODEL_NAME
+from dataclasses import dataclass, field, asdict
+from config import CHUNK_SIZE, CHUNK_OVERLAP, CLAUSE_CHUNK_SIZE, CLAUSE_CHUNK_OVERLAP, MODEL_NAME
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -14,6 +16,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import CrossEncoder
 from chains.generate_answer import generate_chain
 from chains.internal_docs import internal_docs
+from chains.clause_extractor import clause_extractor_chain, deduplicate_clauses, ExtractedClause
+from chains.illegality_detector import illegality_detector_chain
 
 from typing import List, Dict, Any, Optional, TypedDict
 
@@ -208,3 +212,245 @@ def process_question(question):
     after = _get_footprint()
     footprint = _get_diff_footprint(before, after)
     return result, footprint
+
+
+# Data models for document analysis
+@dataclass
+class ClauseAnalysisResult:
+    clause_number: str
+    clause_text: str
+    topic: str
+    is_potentially_illegal: bool
+    confidence: str  # alta, media, baixa
+    conflicting_articles: List[str]
+    explanation: str
+    legal_principle_violated: Optional[str]
+    recommendation: str
+
+
+@dataclass
+class DocumentAnalysisReport:
+    document_name: str
+    analysis_date: str
+    total_clauses_analyzed: int
+    potentially_illegal_count: int
+    clauses: List[ClauseAnalysisResult] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "document_name": self.document_name,
+            "analysis_date": self.analysis_date,
+            "total_clauses_analyzed": self.total_clauses_analyzed,
+            "potentially_illegal_count": self.potentially_illegal_count,
+            "clauses": [asdict(c) for c in self.clauses]
+        }
+
+
+# Analysis workflow state
+class AnalysisState(TypedDict):
+    document_chunks: List[str]
+    extracted_clauses: List[Dict[str, Any]]
+    current_clause_index: int
+    relevant_articles: str
+    analysis_results: List[Dict[str, Any]]
+
+
+def extract_clauses_node(state: AnalysisState) -> AnalysisState:
+    """Extract clauses from all document chunks."""
+    all_clauses = []
+    for chunk in state["document_chunks"]:
+        try:
+            result = clause_extractor_chain.invoke({"document_chunk": chunk})
+            for clause in result.clauses:
+                all_clauses.append({
+                    "clause_number": clause.clause_number,
+                    "clause_text": clause.clause_text,
+                    "topic": clause.topic
+                })
+        except Exception as e:
+            print(f"Error extracting clauses from chunk: {e}")
+            continue
+
+    # Deduplicate based on clause_number
+    seen = set()
+    unique_clauses = []
+    for clause in all_clauses:
+        if clause["clause_number"] not in seen:
+            seen.add(clause["clause_number"])
+            unique_clauses.append(clause)
+
+    return {
+        **state,
+        "extracted_clauses": unique_clauses,
+        "current_clause_index": 0,
+        "analysis_results": []
+    }
+
+
+def retrieve_relevant_articles_node(state: AnalysisState) -> AnalysisState:
+    """Retrieve relevant Civil Code articles for the current clause."""
+    if state["current_clause_index"] >= len(state["extracted_clauses"]):
+        return state
+
+    clause = state["extracted_clauses"][state["current_clause_index"]]
+
+    # Build query based on clause topic and content
+    query = f"Código Civil {clause['topic']} condomínio {clause['clause_text'][:200]}"
+
+    try:
+        docs = retriever.invoke(query)
+        relevant_articles = "\n\n".join([doc.page_content for doc in docs[:5]])
+    except Exception as e:
+        print(f"Error retrieving articles: {e}")
+        relevant_articles = ""
+
+    return {**state, "relevant_articles": relevant_articles}
+
+
+def analyze_clause_node(state: AnalysisState) -> AnalysisState:
+    """Analyze the current clause for potential illegality."""
+    if state["current_clause_index"] >= len(state["extracted_clauses"]):
+        return state
+
+    clause = state["extracted_clauses"][state["current_clause_index"]]
+
+    try:
+        analysis = illegality_detector_chain.invoke({
+            "clause_number": clause["clause_number"],
+            "clause_topic": clause["topic"],
+            "clause_text": clause["clause_text"],
+            "relevant_articles": state["relevant_articles"]
+        })
+
+        result = {
+            "clause_number": clause["clause_number"],
+            "clause_text": clause["clause_text"],
+            "topic": clause["topic"],
+            "is_potentially_illegal": analysis.is_potentially_illegal,
+            "confidence": analysis.confidence,
+            "conflicting_articles": analysis.conflicting_articles,
+            "explanation": analysis.explanation,
+            "legal_principle_violated": analysis.legal_principle_violated,
+            "recommendation": analysis.recommendation
+        }
+    except Exception as e:
+        print(f"Error analyzing clause: {e}")
+        result = {
+            "clause_number": clause["clause_number"],
+            "clause_text": clause["clause_text"],
+            "topic": clause["topic"],
+            "is_potentially_illegal": False,
+            "confidence": "baixa",
+            "conflicting_articles": [],
+            "explanation": f"Erro na análise: {str(e)}",
+            "legal_principle_violated": None,
+            "recommendation": "Revisar manualmente"
+        }
+
+    new_results = state["analysis_results"] + [result]
+    new_index = state["current_clause_index"] + 1
+
+    return {**state, "analysis_results": new_results, "current_clause_index": new_index}
+
+
+def should_continue(state: AnalysisState) -> str:
+    """Determine if there are more clauses to analyze."""
+    if state["current_clause_index"] < len(state["extracted_clauses"]):
+        return "continue"
+    return "complete"
+
+
+def create_analysis_graph():
+    """Create the document analysis workflow graph."""
+    workflow = StateGraph(AnalysisState)
+
+    workflow.add_node("Extract Clauses", extract_clauses_node)
+    workflow.add_node("Retrieve Articles", retrieve_relevant_articles_node)
+    workflow.add_node("Analyze Clause", analyze_clause_node)
+
+    workflow.set_entry_point("Extract Clauses")
+    workflow.add_edge("Extract Clauses", "Retrieve Articles")
+    workflow.add_edge("Retrieve Articles", "Analyze Clause")
+
+    workflow.add_conditional_edges(
+        "Analyze Clause",
+        should_continue,
+        {
+            "continue": "Retrieve Articles",
+            "complete": "__end__"
+        }
+    )
+
+    return workflow.compile()
+
+
+analysis_graph = create_analysis_graph()
+
+
+def analyze_document(document_bytes: bytes, document_name: str) -> DocumentAnalysisReport:
+    """Analyze a condominium document for potentially illegal clauses."""
+    # Save document temporarily
+    temp_path = "temp_analysis_doc.pdf"
+    with open(temp_path, "wb") as f:
+        f.write(document_bytes)
+
+    try:
+        # Load and split document
+        loader = PyPDFLoader(temp_path)
+        docs = loader.load()
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=CLAUSE_CHUNK_SIZE,
+            chunk_overlap=CLAUSE_CHUNK_OVERLAP,
+        )
+        splits = text_splitter.split_documents(docs)
+        chunks = [doc.page_content for doc in splits]
+
+        # Run analysis workflow
+        initial_state: AnalysisState = {
+            "document_chunks": chunks,
+            "extracted_clauses": [],
+            "current_clause_index": 0,
+            "relevant_articles": "",
+            "analysis_results": []
+        }
+
+        # Set high recursion limit to handle documents with many clauses
+        # Each clause requires 2 iterations (retrieve + analyze)
+        result = analysis_graph.invoke(
+            initial_state,
+            config={"recursion_limit": 500}
+        )
+
+        # Build report
+        clause_results = [
+            ClauseAnalysisResult(
+                clause_number=r["clause_number"],
+                clause_text=r["clause_text"],
+                topic=r["topic"],
+                is_potentially_illegal=r["is_potentially_illegal"],
+                confidence=r["confidence"],
+                conflicting_articles=r["conflicting_articles"],
+                explanation=r["explanation"],
+                legal_principle_violated=r["legal_principle_violated"],
+                recommendation=r["recommendation"]
+            )
+            for r in result["analysis_results"]
+        ]
+
+        illegal_count = sum(1 for c in clause_results if c.is_potentially_illegal)
+
+        report = DocumentAnalysisReport(
+            document_name=document_name,
+            analysis_date=datetime.now().isoformat(),
+            total_clauses_analyzed=len(clause_results),
+            potentially_illegal_count=illegal_count,
+            clauses=clause_results
+        )
+
+        return report
+
+    finally:
+        # Cleanup temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)

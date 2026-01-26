@@ -1,8 +1,10 @@
 from typing import Optional
-from config import MODEL_NAME
+
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
+
+from config import MODEL_NAME
 
 llm = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=0)
 

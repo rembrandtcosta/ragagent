@@ -1,7 +1,8 @@
-from config import MODEL_NAME
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
+
+from config import MODEL_NAME
 
 llm = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=0)
 
@@ -14,7 +15,7 @@ class EvaluateDocs(BaseModel):
 
 structured_output = llm.with_structured_output(EvaluateDocs)
 
-system = """Você é um avaliador especialista em relevância de documentos para um sistema RAG (Retrieval-Augmented Generation). Seu papel é avaliar se os documentos recuperados contêm informações suficientes para responder de forma eficaz à consulta do usuário.
+system_prompt = """Você é um avaliador especialista em relevância de documentos para um sistema RAG (Retrieval-Augmented Generation). Seu papel é avaliar se os documentos recuperados contêm informações suficientes para responder de forma eficaz à consulta do usuário.
 
 QUADRO DE AVALIAÇÃO:
 
@@ -60,11 +61,9 @@ AVALIAÇÃO REQUERIDA:
 Forneça sua avaliação abrangente com base no quadro acima.
 """
 
-evaluate_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system),
-        ("human", human_prompt),
-    ]
-)
+evaluate_prompt = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    ("human", human_prompt),
+])
 
 internal_docs = evaluate_prompt | structured_output

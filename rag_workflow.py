@@ -1,30 +1,31 @@
+import asyncio
 import os
 import time
-import psutil
-from datetime import datetime
 from contextlib import contextmanager
-from dataclasses import dataclass, field, asdict
-from config import CHUNK_SIZE, CHUNK_OVERLAP, CLAUSE_CHUNK_SIZE, CLAUSE_CHUNK_OVERLAP, MODEL_NAME
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from typing import Any, Dict, List, Optional, TypedDict
+
+import psutil
+from chromadb.config import Settings
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
-from chromadb.config import Settings
-from langgraph.graph import StateGraph
-from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+from langgraph.graph import StateGraph
 from sentence_transformers import CrossEncoder
-from chains.generate_answer import generate_chain
-from chains.internal_docs import internal_docs
-from chains.clause_extractor import clause_extractor_chain, deduplicate_clauses, ExtractedClause
-from chains.illegality_detector import illegality_detector_chain
+
+from chains.clause_extractor import ExtractedClause, clause_extractor_chain, deduplicate_clauses
+from chains.document_fields import get_document_fields
+from chains.document_request_detector import document_request_detector_chain
 from chains.document_suggester import document_suggester_chain
 from chains.document_writer import document_writer_chain
-from chains.document_request_detector import document_request_detector_chain
-
-from typing import List, Dict, Any, Optional, TypedDict
-
-import asyncio
+from chains.generate_answer import generate_chain
+from chains.illegality_detector import illegality_detector_chain
+from chains.internal_docs import internal_docs
+from chains.source_identifier import identify_used_sources
+from config import CHUNK_OVERLAP, CHUNK_SIZE, CLAUSE_CHUNK_OVERLAP, CLAUSE_CHUNK_SIZE, MODEL_NAME
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
@@ -34,39 +35,85 @@ embeddings = GoogleGenerativeAIEmbeddings(
 )
 
 vectorstore = Chroma(
-        embedding_function=embeddings,
-        persist_directory="./db",
-        client_settings=Settings(
-            anonymized_telemetry=False,
-            is_persistent=True,
-        )
+    embedding_function=embeddings,
+    persist_directory="./db",
+    client_settings=Settings(
+        anonymized_telemetry=False,
+        is_persistent=True,
+    )
 )
 
 retriever_internal = None
+internal_vectorstore_instance = None
+internal_documents_count = 0
+internal_document_names = []
 
 
-def set_internal_retriever(document):
-    global retriever_internal
-    with open("internal_doc.pdf", "wb") as f:
-        f.write(document)
-    loader = PyPDFLoader("internal_doc.pdf")
-    docs = loader.load()
+def clear_internal_documents():
+    """Clear all indexed internal documents."""
+    global retriever_internal, internal_vectorstore_instance, internal_documents_count, internal_document_names
+
+    # Reset all internal document state
+    retriever_internal = None
+    internal_vectorstore_instance = None
+    internal_documents_count = 0
+    internal_document_names = []
+
+
+def get_internal_document_names():
+    """Get list of currently indexed document names."""
+    return internal_document_names.copy()
+
+
+def set_internal_retriever(documents: list):
+    """
+    Set up internal document retriever from multiple uploaded documents.
+    Clears any previously indexed documents first.
+
+    Args:
+        documents: List of tuples (filename, file_bytes)
+    """
+    global retriever_internal, internal_vectorstore_instance, internal_documents_count, internal_document_names
+
+    # Clear existing documents first
+    clear_internal_documents()
+
+    all_splits = []
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
     )
-    splits = text_splitter.split_documents(docs)
-    internal_vectorstore = Chroma.from_documents(
-        documents=splits,
-        embedding=embeddings,
-        persist_directory="./db_internal",
-        client_settings=Settings(
-            anonymized_telemetry=False,
-            is_persistent=True,
-        )
-    )
 
-    retriever_internal = internal_vectorstore.as_retriever()
+    for idx, (filename, file_bytes) in enumerate(documents):
+        temp_path = f"internal_doc_{idx}.pdf"
+        try:
+            with open(temp_path, "wb") as f:
+                f.write(file_bytes)
+            loader = PyPDFLoader(temp_path)
+            docs = loader.load()
+
+            # Add source metadata
+            for doc in docs:
+                doc.metadata["source_file"] = filename
+
+            splits = text_splitter.split_documents(docs)
+            all_splits.extend(splits)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    if all_splits:
+        # Use in-memory storage to avoid database locking issues
+        internal_vectorstore_instance = Chroma.from_documents(
+            documents=all_splits,
+            embedding=embeddings,
+            collection_name="internal_docs",
+        )
+        retriever_internal = internal_vectorstore_instance.as_retriever()
+        internal_documents_count = len(documents)
+        internal_document_names = [name for name, _ in documents]
+
+    return len(documents)
 
 
 llm = ChatGoogleGenerativeAI(model=MODEL_NAME)
@@ -77,7 +124,16 @@ def retrieve(state):
     question = state["question"]
 
     docs = retriever.invoke(question)
-    return {"documents": docs, "question": question}
+
+    # Deduplicate documents by page_content
+    seen_content = set()
+    unique_docs = []
+    for doc in docs:
+        if doc.page_content not in seen_content:
+            seen_content.add(doc.page_content)
+            unique_docs.append(doc)
+
+    return {"documents": unique_docs, "question": question}
 
 
 def retrieve_internal_docs(state):
@@ -87,7 +143,7 @@ def retrieve_internal_docs(state):
     return {"internal_documents": docs}
 
 
-reranker_model = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+reranker_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 
 def evaluate(state):
@@ -121,8 +177,16 @@ def internal(state):
         if internal_relevance.score.lower() == "sim":
             documents = documents + [doc]
 
+    # Deduplicate documents by page_content
+    seen_content = set()
+    unique_documents = []
+    for doc in documents:
+        if doc.page_content not in seen_content:
+            seen_content.add(doc.page_content)
+            unique_documents.append(doc)
+
     return {
-        "documents": documents,
+        "documents": unique_documents,
         "question": question,
         "document_evaluations": state.get("document_evaluations", []),
     }
@@ -149,30 +213,43 @@ class GraphState(TypedDict):
     question_relevance_score: Optional[Dict[str, Any]]
 
 
+def check_internal_docs_available(state):
+    """Check if internal documents retriever is available."""
+    if retriever_internal is None:
+        return "no_internal"
+    return "has_internal"
+
+
 def create_graph():
     workflow = StateGraph(GraphState)
 
     workflow.add_node("Retrieve Documents", retrieve)
     workflow.add_node("Retrieve Internal Documents", retrieve_internal_docs)
-    workflow.add_node("Grade Documents", evaluate)
     workflow.add_node("Check Internal Docs", internal)
     workflow.add_node("Generate Answer", generate_answer)
 
     workflow.set_entry_point("Retrieve Documents")
-    workflow.add_edge("Retrieve Documents", "Generate Answer")
+
+    # After retrieving external docs, check if we have internal docs
     workflow.add_conditional_edges(
-        "Grade Documents",
-        lambda state:
-            "answer" if retriever_internal is None else "internal_docs",
+        "Retrieve Documents",
+        check_internal_docs_available,
         {
-            "answer": "Generate Answer",
-            "internal_docs": "Retrieve Internal Documents"
+            "no_internal": "Generate Answer",
+            "has_internal": "Retrieve Internal Documents"
         }
     )
+
     workflow.add_edge("Retrieve Internal Documents", "Check Internal Docs")
     workflow.add_edge("Check Internal Docs", "Generate Answer")
 
     return workflow.compile()
+
+
+def recreate_graph():
+    """Recreate the graph (call after loading internal documents)."""
+    global graph
+    graph = create_graph()
 
 
 graph = create_graph()
